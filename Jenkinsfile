@@ -34,19 +34,23 @@ pipeline {
         }
 
         stage('Login to Docker Hub') {
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'dockerhub-credentials',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_TOKEN'
-                    )
-                ]) {
-                    bat '@echo %DOCKER_TOKEN% | docker login -u %DOCKER_USER% --password-stdin'
-                }
+        steps {
+            withCredentials([
+                usernamePassword(
+                    credentialsId: 'dockerhub-credentials',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_TOKEN'
+                )
+            ]) {
+                powershell '''
+                    Write-Host "USER=$env:DOCKER_USER"
+                    Write-Host "TOKEN_LENGTH=$($env:DOCKER_TOKEN.Length)"
+                    Write-Host "TOKEN_PREFIX_OK=$($env:DOCKER_TOKEN.StartsWith('dckr_pat_'))"
+                    Write-Host "TRIMMED_LENGTH=$($env:DOCKER_TOKEN.Trim().Length)"
+                '''
             }
         }
-
+    }
         stage('Push Docker Image') {
             steps {
                 bat 'docker push %DOCKER_IMAGE%:%BUILD_NUMBER%'
