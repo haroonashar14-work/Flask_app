@@ -20,5 +20,11 @@ pipeline {
                 bat 'python -m pytest'
             }
         }
+
+        stage('Build Docker Image') {
+            steps {
+                bat 'docker build -t flask-app:1.0 .'
+            }
+        }
     }
 }
