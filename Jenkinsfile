@@ -36,48 +36,32 @@ pipeline {
             }
         }
 
-        stage('Login to Docker Hub') {
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: "${DOCKER_CREDENTIALS_ID}",
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_TOKEN'
-                    )
-                ]) {
-                    powershell '''
-                        $user = $env:DOCKER_USER.Trim()
-                        $token = $env:DOCKER_TOKEN.Trim()
+    stage('Login to Docker Hub') {
+    steps {
+        withCredentials([
+            usernamePassword(
+                credentialsId: 'dockerhub-credentials',
+                usernameVariable: 'DOCKER_USER',
+                passwordVariable: 'DOCKER_TOKEN'
+            )
+        ]) {
+            powershell '''
+                $user = $env:DOCKER_USER.Trim()
+                $token = $env:DOCKER_TOKEN.Trim()
 
-                        Write-Host "Docker username: [$user]"
-                        Write-Host "Username length: $($user.Length)"
-                        Write-Host "Token length: $($token.Length)"
+                Write-Host "Docker username: [$user]"
+                Write-Host "Username length: $($user.Length)"
+                Write-Host "Token length: $($token.Length)"
 
-                        if ([string]::IsNullOrWhiteSpace($user)) {
-                            Write-Error "Docker username is empty"
-                            exit 1
-                        }
+                $token | docker login --username $user --password-stdin
 
-                        if ([string]::IsNullOrWhiteSpace($token)) {
-                            Write-Error "Docker token/password is empty"
-                            exit 1
-                        }
-
-                        $token | docker login `
-                            --username $user `
-                            --password-stdin
-
-                        if ($LASTEXITCODE -ne 0) {
-                            Write-Error "Docker Hub login failed"
-                            exit $LASTEXITCODE
-                        }
-
-                        Write-Host "Docker Hub login successful"
-                    '''
+                if ($LASTEXITCODE -ne 0) {
+                    exit $LASTEXITCODE
                 }
-            }
+            '''
         }
-
+    }
+}
         stage('Push Docker Image') {
             steps {
                 bat '''
