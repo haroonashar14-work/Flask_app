@@ -33,7 +33,7 @@ pipeline {
             }
         }
         
-        stage('Login to Docker Hub') {
+stage('Check Docker Credential') {
     steps {
         withCredentials([
             usernamePassword(
@@ -43,11 +43,17 @@ pipeline {
             )
         ]) {
             powershell '''
-                $env:DOCKER_TOKEN | docker login -u $env:DOCKER_USER --password-stdin
+                $bytes = [Text.Encoding]::UTF8.GetBytes($env:DOCKER_TOKEN)
+                $sha = [Security.Cryptography.SHA256]::Create()
+                $hash = [BitConverter]::ToString(
+                    $sha.ComputeHash($bytes)
+                ).Replace("-", "").ToLower()
+
+                Write-Host "SHA256=$hash"
             '''
         }
     }
-} 
+}
         stage('Push Docker Image') {
             steps {
                 bat 'docker push %DOCKER_IMAGE%:%BUILD_NUMBER%'
