@@ -41,6 +41,7 @@ pipeline {
                         passwordVariable: 'DOCKER_TOKEN'
                     )
                 ]) 
+            }
 
         stage('Push Docker Image') {
             steps {
