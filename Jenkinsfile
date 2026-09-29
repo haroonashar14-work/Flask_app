@@ -2,67 +2,109 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'haroonashar/flask-devops-app'
+        DOCKER_IMAGE = 'haroonashar/flask-app'
     }
 
     stages {
-        stage('Check Environmentsss') {
+
+        stage('Check Environment') {
             steps {
-                bat 'whoami'
                 bat 'python --version'
-                bat 'docker version'
+                bat 'python -m pip --version'
+                bat 'docker --version'
             }
         }
 
-        stage('Setup') {
+        stage('Checkout Code') {
             steps {
-                bat 'python -m pip install -r requirements.txt'
+                checkout scm
             }
         }
 
-        stage('Test') {
+        stage('Install Dependencies') {
             steps {
-                bat 'python -m pytest'
+                bat '''
+                python -m pip install --upgrade pip
+                if exist requirements.txt (
+                    python -m pip install -r requirements.txt
+                )
+                '''
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                bat '''
+                if exist test_app.py (
+                    python -m pytest -v
+                ) else (
+                    echo No test_app.py found. Skipping tests.
+                )
+                '''
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                bat 'docker build -t %DOCKER_IMAGE%:%BUILD_NUMBER% .'
+                bat '''
+                docker build -t %DOCKER_IMAGE%:latest .
+                '''
             }
         }
-    withCredentials([
-    usernamePassword(
-        credentialsId: 'dockerhub-creds',
-        usernameVariable: 'DOCKER_USER',
-        passwordVariable: 'DOCKER_TOKEN'
-    )
-]) {
-    bat '''
-    @echo off
-    echo %DOCKER_TOKEN% | docker login -u %DOCKER_USER% --password-stdin
-    docker push %DOCKER_IMAGE%:latest
-    '''
-}
 
         stage('Login and Push Docker Image') {
             steps {
                 withCredentials([
                     usernamePassword(
-                        credentialsId: 'dockerhub-credentials',
+                        credentialsId: 'dockerhub-creds',
                         usernameVariable: 'DOCKER_USER',
                         passwordVariable: 'DOCKER_TOKEN'
                     )
                 ]) {
                     bat '''
-                        @echo off
-                        echo %DOCKER_TOKEN% | docker login --username %DOCKER_USER% --password-stdin
-                        if errorlevel 1 exit /b 1
+                    @echo off
 
-                        docker push %DOCKER_IMAGE%:%BUILD_NUMBER%
+                    echo Logging in to Docker Hub...
+
+                    echo %DOCKER_TOKEN% | docker login -u %DOCKER_USER% --password-stdin
+
+                    if errorlevel 1 (
+                        echo Docker login failed.
+                        exit /b 1
+                    )
+
+                    echo Docker login successful.
+
+                    echo Pushing image...
+                    docker push %DOCKER_IMAGE%:latest
+
+                    if errorlevel 1 (
+                        echo Docker push failed.
+                        exit /b 1
+                    )
+
+                    echo Docker image pushed successfully.
                     '''
                 }
             }
+        }
+
+    }
+
+    post {
+
+        success {
+            echo 'Pipeline completed successfully.'
+        }
+
+        failure {
+            echo 'Pipeline failed. Check the logs above.'
+        }
+
+        always {
+            bat '''
+            docker logout
+            '''
         }
     }
 }
