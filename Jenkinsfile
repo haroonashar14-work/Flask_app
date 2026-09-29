@@ -2,15 +2,15 @@ pipeline {
     agent any
 
     stages {
-        stage('Checkout') {
+        stage('Setup') {
             steps {
-                echo 'Code has been checked out from GitHub.'
+                bat 'python -m pip install -r requirements.txt'
             }
         }
 
-        stage('Test Pipeline') {
+        stage('Test') {
             steps {
-                echo 'Jenkins pipeline is working!'
+                bat 'python -m pytest'
             }
         }
     }
