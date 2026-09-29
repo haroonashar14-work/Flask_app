@@ -1,3 +1,9 @@
+stage('Check Environment') {
+    steps {
+        bat 'python --version'
+        bat 'python -m pip --version'
+    }
+}
 pipeline {
     agent any
 
