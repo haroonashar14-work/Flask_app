@@ -3,6 +3,8 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = 'haroonashar/flask-app'
+        DOCKER_USERNAME = 'haroonashar'
+        DOCKER_PASSWORD = 'dckr_pat_swse5jFVQiyXAfJu1Py8RL6Y5_A'
     }
 
     stages {
@@ -15,43 +17,21 @@ pipeline {
             }
         }
 
-        stage('Setup') {
+        stage('Login to Docker Hub') {
             steps {
-                bat 'python -m pip install -r requirements.txt'
-            }
-        }
-
-        stage('Test') {
-            steps {
-                bat 'python -m pytest'
+                bat 'echo %DOCKER_PASSWORD% | docker login -u %DOCKER_USERNAME% --password-stdin'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                bat 'docker build -t %DOCKER_IMAGE%:%BUILD_NUMBER% .'
-            }
-        }
-
-        stage('Login to Docker Hub') {
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'dockerhub-creds',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                    )
-                ]) {
-                    powershell '''
-                        $env:DOCKER_PASS | docker login -u $env:DOCKER_USER --password-stdin
-                    '''
-                }
+                bat 'docker build -t %DOCKER_IMAGE% .'
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                bat 'docker push %DOCKER_IMAGE%:%BUILD_NUMBER%'
+                bat 'docker push %DOCKER_IMAGE%'
             }
         }
     }
