@@ -7,7 +7,7 @@ pipeline {
 
         // TEMPORARY TEST ONLY
         // Paste your Docker Hub access token here.
-        DOCKER_PASSWORD = 'PASTE_YOUR_DOCKER_HUB_TOKEN_HERE'
+        DOCKER_PASSWORD = 'dckr_pat_swse5jFVQiyXAfJu1Py8RL6Y5_A'
     }
 
     stages {
