@@ -31,6 +31,19 @@ pipeline {
                 bat 'docker build -t %DOCKER_IMAGE%:%BUILD_NUMBER% .'
             }
         }
+    withCredentials([
+    usernamePassword(
+        credentialsId: 'dockerhub-creds',
+        usernameVariable: 'DOCKER_USER',
+        passwordVariable: 'DOCKER_TOKEN'
+    )
+]) {
+    bat '''
+    @echo off
+    echo %DOCKER_TOKEN% | docker login -u %DOCKER_USER% --password-stdin
+    docker push %DOCKER_IMAGE%:latest
+    '''
+}
 
         stage('Login and Push Docker Image') {
             steps {
