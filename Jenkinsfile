@@ -3,7 +3,6 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = 'haroonashar/flask-app'
-        DOCKER_CREDENTIALS_ID = 'dockerhub-credentials'
     }
 
     stages {
@@ -30,65 +29,66 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                bat '''
-                    docker build -t %DOCKER_IMAGE%:%BUILD_NUMBER% .
-                '''
+                bat 'docker build -t %DOCKER_IMAGE%:%BUILD_NUMBER% .'
             }
         }
 
-  stage('Login to Docker Hub') {
-    steps {
-        withCredentials([
-            usernamePassword(
-                credentialsId: 'dockerhub-credentials',
-                usernameVariable: 'DOCKER_USER',
-                passwordVariable: 'DOCKER_TOKEN'
-            )
-        ]) {
-            powershell '''
-                $user = $env:DOCKER_USER.Trim()
-                $token = $env:DOCKER_TOKEN.Trim()
+        stage('Login to Docker Hub') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-credentials',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_TOKEN'
+                    )
+                ]) {
+                    powershell '''
+                        $user = $env:DOCKER_USER.Trim()
+                        $token = $env:DOCKER_TOKEN.Trim()
 
-                Write-Host "Username: [$user]"
-                Write-Host "Username length: $($user.Length)"
-                Write-Host "Token length: $($token.Length)"
+                        Write-Host "Docker username: [$user]"
+                        Write-Host "Token length: $($token.Length)"
 
-                $sha256 = [System.Security.Cryptography.SHA256]::Create()
-                $bytes = [System.Text.Encoding]::UTF8.GetBytes($token)
-                $hashBytes = $sha256.ComputeHash($bytes)
-                $hash = [BitConverter]::ToString($hashBytes).Replace("-", "").ToLower()
+                        $processInfo = New-Object System.Diagnostics.ProcessStartInfo
+                        $processInfo.FileName = "docker.exe"
+                        $processInfo.Arguments = "login --username $user --password-stdin"
+                        $processInfo.UseShellExecute = $false
+                        $processInfo.RedirectStandardInput = $true
+                        $processInfo.RedirectStandardOutput = $true
+                        $processInfo.RedirectStandardError = $true
 
-                Write-Host "Jenkins token SHA256: $hash"
+                        $process = New-Object System.Diagnostics.Process
+                        $process.StartInfo = $processInfo
 
-                $token | docker login `
-                    --username $user `
-                    --password-stdin
+                        $process.Start() | Out-Null
 
-                if ($LASTEXITCODE -ne 0) {
-                    exit $LASTEXITCODE
+                        $process.StandardInput.WriteLine($token)
+                        $process.StandardInput.Close()
+
+                        $stdout = $process.StandardOutput.ReadToEnd()
+                        $stderr = $process.StandardError.ReadToEnd()
+
+                        $process.WaitForExit()
+
+                        Write-Host $stdout
+
+                        if ($process.ExitCode -ne 0) {
+                            Write-Host $stderr
+                            exit $process.ExitCode
+                        }
+                    '''
                 }
-            '''
+            }
         }
-    }
-}
+
         stage('Push Docker Image') {
             steps {
-                bat '''
-                    docker push %DOCKER_IMAGE%:%BUILD_NUMBER%
-                '''
+                bat 'docker push %DOCKER_IMAGE%:%BUILD_NUMBER%'
             }
         }
     }
 
     post {
-        success {
-            echo 'Pipeline completed successfully.'
-        }
-
-        failure {
-            echo 'Pipeline failed. Check the stage logs above.'
-        }
-
         always {
             bat 'docker logout || exit /b 0'
         }
