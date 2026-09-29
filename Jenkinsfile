@@ -42,42 +42,8 @@ pipeline {
                         passwordVariable: 'DOCKER_TOKEN'
                     )
                 ]) {
-                    powershell '''
-                        $user = $env:DOCKER_USER.Trim()
-                        $token = $env:DOCKER_TOKEN.Trim()
-
-                        Write-Host "Docker username: $user"
-                        Write-Host "Token loaded: $($token.Length -gt 0)"
-
-                        $processInfo = New-Object System.Diagnostics.ProcessStartInfo
-                        $processInfo.FileName = "docker.exe"
-                        $processInfo.Arguments = "login --username $user --password-stdin"
-                        $processInfo.UseShellExecute = $false
-                        $processInfo.RedirectStandardInput = $true
-                        $processInfo.RedirectStandardOutput = $true
-                        $processInfo.RedirectStandardError = $true
-
-                        $process = New-Object System.Diagnostics.Process
-                        $process.StartInfo = $processInfo
-
-                        $process.Start() | Out-Null
-
-                        $process.StandardInput.Write($token)
-                        $process.StandardInput.Close()
-
-                        $stdout = $process.StandardOutput.ReadToEnd()
-                        $stderr = $process.StandardError.ReadToEnd()
-
-                        $process.WaitForExit()
-
-                        Write-Host $stdout
-
-                        if ($process.ExitCode -ne 0) {
-                            Write-Host $stderr
-                            exit $process.ExitCode
-                        }
-
-                        Write-Host "Docker Hub login successful"
+                    bat '''
+                        docker login -u "%DOCKER_USER%" -p "%DOCKER_TOKEN%"
                     '''
                 }
             }
