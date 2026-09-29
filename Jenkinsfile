@@ -4,10 +4,19 @@ pipeline {
     environment {
         DOCKER_IMAGE = 'haroonashar/flask-app'
         DOCKER_USERNAME = 'haroonashar'
-        DOCKER_PASSWORD = 'dckr_pat_swse5jFVQiyXAfJu1Py8RL6Y5_A'
+
+        // TEMPORARY TEST ONLY
+        // Paste your Docker Hub access token here.
+        DOCKER_PASSWORD = 'PASTE_YOUR_DOCKER_HUB_TOKEN_HERE'
     }
 
     stages {
+
+        stage('Checkout SCM') {
+            steps {
+                checkout scm
+            }
+        }
 
         stage('Check Environment') {
             steps {
@@ -17,9 +26,16 @@ pipeline {
             }
         }
 
-        stage('Login to Docker Hub') {
+        stage('Setup') {
             steps {
-                bat 'echo %DOCKER_PASSWORD% | docker login -u %DOCKER_USERNAME% --password-stdin'
+                bat 'python -m pip install --upgrade pip'
+                bat 'python -m pip install -r requirements.txt'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                bat 'python -m pytest'
             }
         }
 
@@ -29,10 +45,32 @@ pipeline {
             }
         }
 
+        stage('Login to Docker Hub') {
+            steps {
+                // IMPORTANT:
+                // no spaces before the pipe
+                bat 'echo %DOCKER_PASSWORD%|docker login -u %DOCKER_USERNAME% --password-stdin'
+            }
+        }
+
         stage('Push Docker Image') {
             steps {
                 bat 'docker push %DOCKER_IMAGE%'
             }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline completed successfully.'
+        }
+
+        failure {
+            echo 'Pipeline failed. Check the failed stage logs.'
+        }
+
+        always {
+            bat 'docker logout'
         }
     }
 }
