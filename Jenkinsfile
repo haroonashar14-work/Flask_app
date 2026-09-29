@@ -33,27 +33,28 @@ pipeline {
             }
         }
         
-        stage('Login to Docker Hub') {
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'dockerhub-credentials',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_TOKEN'
-                    )
-                ]) {
-                    powershell '''
-                        Write-Host "Logging into Docker Hub as $env:DOCKER_USER"
-        
-                        $env:DOCKER_TOKEN | docker login -u $env:DOCKER_USER --password-stdin
-        
-                        if ($LASTEXITCODE -ne 0) {
-                            throw "Docker Hub login failed"
-                        }
-                    '''
-                }
-            }
+        stage('Check Docker Credential') {
+    steps {
+        withCredentials([
+            usernamePassword(
+                credentialsId: 'dockerhub-credentials',
+                usernameVariable: 'DOCKER_USER',
+                passwordVariable: 'DOCKER_TOKEN'
+            )
+        ]) {
+            powershell '''
+                $bytes = [System.Text.Encoding]::UTF8.GetBytes($env:DOCKER_TOKEN)
+                $sha = [System.Security.Cryptography.SHA256]::Create()
+                $hash = [BitConverter]::ToString($sha.ComputeHash($bytes)).Replace("-", "").ToLower()
+
+                Write-Host "USER=$env:DOCKER_USER"
+                Write-Host "LENGTH=$($env:DOCKER_TOKEN.Length)"
+                Write-Host "SHA256=$hash"
+            '''
         }
+    }
+}
+        
         stage('Push Docker Image') {
             steps {
                 bat 'docker push %DOCKER_IMAGE%:%BUILD_NUMBER%'
