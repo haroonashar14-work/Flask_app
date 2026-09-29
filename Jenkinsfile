@@ -2,11 +2,10 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'haroonashar/flask-devops-app'
+        DOCKER_IMAGE = 'haroonashar/flask-app'
     }
 
     stages {
-
         stage('Check Environment') {
             steps {
                 bat 'python --version'
@@ -32,28 +31,23 @@ pipeline {
                 bat 'docker build -t %DOCKER_IMAGE%:%BUILD_NUMBER% .'
             }
         }
-        
-stage('Check Docker Credential') {
-    steps {
-        withCredentials([
-            usernamePassword(
-                credentialsId: 'dockerhub-credentials',
-                usernameVariable: 'DOCKER_USER',
-                passwordVariable: 'DOCKER_TOKEN'
-            )
-        ]) {
-            powershell '''
-                $bytes = [Text.Encoding]::UTF8.GetBytes($env:DOCKER_TOKEN)
-                $sha = [Security.Cryptography.SHA256]::Create()
-                $hash = [BitConverter]::ToString(
-                    $sha.ComputeHash($bytes)
-                ).Replace("-", "").ToLower()
 
-                Write-Host "SHA256=$hash"
-            '''
+        stage('Login to Docker Hub') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-credentials',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_TOKEN'
+                    )
+                ]) {
+                    powershell '''
+                        $env:DOCKER_TOKEN | docker login -u $env:DOCKER_USER --password-stdin
+                    '''
+                }
+            }
         }
-    }
-}
+
         stage('Push Docker Image') {
             steps {
                 bat 'docker push %DOCKER_IMAGE%:%BUILD_NUMBER%'
