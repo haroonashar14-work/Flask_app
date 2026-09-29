@@ -2,15 +2,15 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'haroonashar/flask-app'
+        DOCKER_IMAGE = 'haroonashar/flask-devops-app'
     }
 
     stages {
         stage('Check Environment') {
             steps {
+                bat 'whoami'
                 bat 'python --version'
-                bat 'python -m pip --version'
-                bat 'docker --version'
+                bat 'docker version'
             }
         }
 
@@ -32,7 +32,7 @@ pipeline {
             }
         }
 
-        stage('Login to Docker Hub') {
+        stage('Login and Push Docker Image') {
             steps {
                 withCredentials([
                     usernamePassword(
@@ -41,16 +41,14 @@ pipeline {
                         passwordVariable: 'DOCKER_TOKEN'
                     )
                 ]) {
-                    powershell '''
-                        $env:DOCKER_TOKEN | docker login -u $env:DOCKER_USER --password-stdin
+                    bat '''
+                        @echo off
+                        echo %DOCKER_TOKEN% | docker login --username %DOCKER_USER% --password-stdin
+                        if errorlevel 1 exit /b 1
+
+                        docker push %DOCKER_IMAGE%:%BUILD_NUMBER%
                     '''
                 }
-            }
-        }
-
-        stage('Push Docker Image') {
-            steps {
-                bat 'docker push %DOCKER_IMAGE%:%BUILD_NUMBER%'
             }
         }
     }
