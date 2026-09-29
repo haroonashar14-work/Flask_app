@@ -6,7 +6,7 @@ pipeline {
     }
 
     stages {
-        stage('Check Environment') {
+        stage('Check Environmentsss') {
             steps {
                 bat 'whoami'
                 bat 'python --version'
