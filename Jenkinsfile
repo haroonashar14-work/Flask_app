@@ -40,13 +40,7 @@ pipeline {
                         usernameVariable: 'DOCKER_USER',
                         passwordVariable: 'DOCKER_TOKEN'
                     )
-                ]) {
-                    powershell '''
-                        $env:DOCKER_TOKEN | docker login -u $env:DOCKER_USER --password-stdin
-                    '''
-                }
-            }
-        }
+                ]) 
 
         stage('Push Docker Image') {
             steps {
