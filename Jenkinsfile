@@ -36,7 +36,7 @@ pipeline {
             }
         }
 
-    stage('Login to Docker Hub') {
+  stage('Login to Docker Hub') {
     steps {
         withCredentials([
             usernamePassword(
@@ -49,11 +49,20 @@ pipeline {
                 $user = $env:DOCKER_USER.Trim()
                 $token = $env:DOCKER_TOKEN.Trim()
 
-                Write-Host "Docker username: [$user]"
+                Write-Host "Username: [$user]"
                 Write-Host "Username length: $($user.Length)"
                 Write-Host "Token length: $($token.Length)"
 
-                $token | docker login --username $user --password-stdin
+                $sha256 = [System.Security.Cryptography.SHA256]::Create()
+                $bytes = [System.Text.Encoding]::UTF8.GetBytes($token)
+                $hashBytes = $sha256.ComputeHash($bytes)
+                $hash = [BitConverter]::ToString($hashBytes).Replace("-", "").ToLower()
+
+                Write-Host "Jenkins token SHA256: $hash"
+
+                $token | docker login `
+                    --username $user `
+                    --password-stdin
 
                 if ($LASTEXITCODE -ne 0) {
                     exit $LASTEXITCODE
