@@ -32,22 +32,14 @@ pipeline {
             }
         }
 
-        stage('Login to Docker Hub') {
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'dockerhub-credentials',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_TOKEN'
-                    )
-                ]) {
-                    powershell '''
-                        $env:DOCKER_TOKEN | docker login -u $env:DOCKER_USER --password-stdin
-                    '''
-                }
-            }
-        }
-
+       stage('Check Environment') {
+    steps {
+        bat 'whoami'
+        bat 'python --version'
+        bat 'python -m pip --version'
+        bat 'docker --version'
+    }
+}
         stage('Push Docker Image') {
             steps {
                 bat 'docker push %DOCKER_IMAGE%:%BUILD_NUMBER%'
