@@ -15,96 +15,44 @@ pipeline {
             }
         }
 
-        stage('Checkout Code') {
+        stage('Setup') {
             steps {
-                checkout scm
+                bat 'python -m pip install -r requirements.txt'
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Test') {
             steps {
-                bat '''
-                python -m pip install --upgrade pip
-                if exist requirements.txt (
-                    python -m pip install -r requirements.txt
-                )
-                '''
-            }
-        }
-
-        stage('Run Tests') {
-            steps {
-                bat '''
-                if exist test_app.py (
-                    python -m pytest -v
-                ) else (
-                    echo No test_app.py found. Skipping tests.
-                )
-                '''
+                bat 'python -m pytest'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                bat '''
-                docker build -t %DOCKER_IMAGE%:latest .
-                '''
+                bat 'docker build -t %DOCKER_IMAGE%:%BUILD_NUMBER% .'
             }
         }
 
-        stage('Login and Push Docker Image') {
+        stage('Login to Docker Hub') {
             steps {
                 withCredentials([
                     usernamePassword(
                         credentialsId: 'dockerhub-creds',
                         usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_TOKEN'
+                        passwordVariable: 'DOCKER_PASS'
                     )
                 ]) {
-                    bat '''
-                    @echo off
-
-                    echo Logging in to Docker Hub...
-
-                    echo %DOCKER_TOKEN% | docker login -u %DOCKER_USER% --password-stdin
-
-                    if errorlevel 1 (
-                        echo Docker login failed.
-                        exit /b 1
-                    )
-
-                    echo Docker login successful.
-
-                    echo Pushing image...
-                    docker push %DOCKER_IMAGE%:latest
-
-                    if errorlevel 1 (
-                        echo Docker push failed.
-                        exit /b 1
-                    )
-
-                    echo Docker image pushed successfully.
+                    powershell '''
+                        $env:DOCKER_PASS | docker login -u $env:DOCKER_USER --password-stdin
                     '''
                 }
             }
         }
 
-    }
-
-    post {
-
-        success {
-            echo 'Pipeline completed successfully.'
-        }
-
-        failure {
-            echo 'Pipeline failed. Check the logs above.'
-        }
-
-        always {
-            bat '''
-            docker logout
-            '''
+        stage('Push Docker Image') {
+            steps {
+                bat 'docker push %DOCKER_IMAGE%:%BUILD_NUMBER%'
+            }
         }
     }
 }
