@@ -1,6 +1,5 @@
 pipeline {
     agent any
-    
 
     stages {
         stage('Check Environment') {
@@ -9,6 +8,7 @@ pipeline {
                 bat 'python -m pip --version'
             }
         }
+
         stage('Setup') {
             steps {
                 bat 'python -m pip install -r requirements.txt'
