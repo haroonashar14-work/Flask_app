@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'haroonashar/flask-app'
+        DOCKER_IMAGE = 'haroonashar/flask-devops-app'
     }
 
     stages {
