@@ -31,13 +31,25 @@ pipeline {
                 bat 'docker build -t %DOCKER_IMAGE%:%BUILD_NUMBER% .'
             }
         }
-
-               stage('Check Environmentssss') {
+        
+        stage('Login to Docker Hub') {
             steps {
-                bat 'whoami'
-                bat 'python --version'
-                bat 'python -m pip --version'
-                bat 'docker --version'
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-credentials',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_TOKEN'
+                    )
+                ]) {
+                    powershell '''
+                        $dockerConfig = "$env:WORKSPACE\\.docker"
+                        New-Item -ItemType Directory -Force -Path $dockerConfig | Out-Null
+        
+                        $env:DOCKER_TOKEN | docker --config "$dockerConfig" login `
+                            -u $env:DOCKER_USER `
+                            --password-stdin
+                    '''
+                }
             }
         }
         stage('Push Docker Image') {
