@@ -42,7 +42,9 @@ pipeline {
                     )
                 ]) {
                     powershell '''
-                        $env:DOCKER_TOKEN | docker login -u $env:DOCKER_USER --password-stdin
+                        Write-Host "Docker username: $env:DOCKER_USER"
+                        Write-Host "Token length: $($env:DOCKER_TOKEN.Length)"
+                        Write-Host "Token starts with dckr_pat_: $($env:DOCKER_TOKEN.StartsWith('dckr_pat_'))"
                     '''
                 }
             }
