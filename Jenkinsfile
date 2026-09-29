@@ -46,8 +46,8 @@ pipeline {
                         $user = $env:DOCKER_USER.Trim()
                         $token = $env:DOCKER_TOKEN.Trim()
 
-                        Write-Host "Docker username: [$user]"
-                        Write-Host "Token length: $($token.Length)"
+                        Write-Host "Docker username: $user"
+                        Write-Host "Token loaded: $($token.Length -gt 0)"
 
                         $processInfo = New-Object System.Diagnostics.ProcessStartInfo
                         $processInfo.FileName = "docker.exe"
@@ -62,7 +62,7 @@ pipeline {
 
                         $process.Start() | Out-Null
 
-                        $process.StandardInput.WriteLine($token)
+                        $process.StandardInput.Write($token)
                         $process.StandardInput.Close()
 
                         $stdout = $process.StandardOutput.ReadToEnd()
@@ -76,6 +76,8 @@ pipeline {
                             Write-Host $stderr
                             exit $process.ExitCode
                         }
+
+                        Write-Host "Docker Hub login successful"
                     '''
                 }
             }
