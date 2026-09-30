@@ -54,6 +54,13 @@ pipeline {
                 bat 'docker push %DOCKER_IMAGE%:%BUILD_NUMBER%'
             }
         }
+        stage('Check Kubernetes') {
+            steps {
+                bat 'kubectl version --client'
+                bat 'kubectl config current-context'
+                bat 'kubectl get nodes'
+            }
+        }
     }
 
     post {
