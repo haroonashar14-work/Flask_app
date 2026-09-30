@@ -3,6 +3,8 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = 'haroonashar/flask-app'
+        KUBECONFIG = 'C:\\ProgramData\\Jenkins\\.jenkins\\.kube\\config'
+
     }
 
     stages {
