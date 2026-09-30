@@ -56,6 +56,14 @@ pipeline {
                 bat 'docker push %DOCKER_IMAGE%:%BUILD_NUMBER%'
             }
         }
+        stage('Deploy to Kubernetes') {
+            steps {
+                bat '''
+                    kubectl set image deployment/flask-app flask-app=haroonashar/flask-app:%BUILD_NUMBER%
+                    kubectl rollout status deployment/flask-app --timeout=120s
+                '''
+            }
+        }
         stage('Check Kubernetes') {
             steps {
                 bat 'kubectl version --client'
