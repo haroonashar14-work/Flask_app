@@ -56,15 +56,7 @@ pipeline {
                 bat 'docker push %DOCKER_IMAGE%:%BUILD_NUMBER%'
             }
         }
-        stage('Check Minikube') {
-            steps {
-                bat '''
-                    kubectl config current-context
-                    kubectl get nodes
-                    kubectl get pods
-                '''
-            }
-        }
+        
         stage('Deploy to Kubernetes') {
             steps {
                 bat '''
