@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: flask-app
+  name: flask-app         #name for this deployment 
 spec:
   replicas: 2
 
@@ -9,13 +9,13 @@ spec:
     matchLabels:
       app: flask-app
 
-  template:
+  template:               #how to create a pod 
     metadata:
       labels:
         app: flask-app
 
-    spec:
-      containers:
+    spec:             #pod specs
+      containers:     #containers to run inside the pod
         - name: flask-app
           image: haroonashar/flask-app:61
           ports:

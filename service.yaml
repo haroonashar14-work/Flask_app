@@ -4,9 +4,9 @@ metadata:
   name: flask-service
 
 spec:
-  type: NodePort
+  type: NodePort    #port exposed on kubernetes node so service is reachable throught that port
 
-  selector:
+  selector:     #select the pods to send traffic to 
     app: flask-app
 
   ports:
